@@ -11,6 +11,8 @@ LDFLAGS = -lm
 
 # 目标文件
 TARGET = dtmf
+TARGET_FFT2D = fft2d
+TARGET_KSPACE = kspace_to_image
 
 # 源文件
 SOURCES = main-dtmf.c
@@ -20,13 +22,25 @@ OBJECTS = $(SOURCES:.c=.o)
 
 # 默认目标
 .PHONY: all
-all: $(TARGET)
+all: $(TARGET) $(TARGET_FFT2D) $(TARGET_KSPACE)
 
 # 编译目标
 $(TARGET): $(SOURCES)
 	@echo "正在编译 DTMF 信号生成器..."
 	$(CC) $(CFLAGS) -o $(TARGET) $(SOURCES) $(LDFLAGS)
 	@echo "编译完成！使用 './$(TARGET) <按键>' 运行程序"
+
+# 编译2D FFT程序
+$(TARGET_FFT2D): main-fft2d.c
+	@echo "正在编译 2D FFT 程序..."
+	$(CC) $(CFLAGS) -o $(TARGET_FFT2D) main-fft2d.c $(LDFLAGS)
+	@echo "编译完成！使用 './$(TARGET_FFT2D)' 运行程序"
+
+# 编译K空间还原程序
+$(TARGET_KSPACE): kspace_to_image.c
+	@echo "正在编译 K空间还原程序..."
+	$(CC) $(CFLAGS) -o $(TARGET_KSPACE) kspace_to_image.c $(LDFLAGS)
+	@echo "编译完成！使用 './$(TARGET_KSPACE) [kspace_data.bin]' 运行程序"
 
 # 编译对象文件
 %.o: %.c
@@ -36,7 +50,7 @@ $(TARGET): $(SOURCES)
 .PHONY: clean
 clean:
 	@echo "清理编译文件..."
-	rm -f $(TARGET) $(OBJECTS)
+	rm -f $(TARGET) $(TARGET_FFT2D) $(TARGET_KSPACE) $(OBJECTS)
 	@echo "清理完成！"
 
 # 测试运行

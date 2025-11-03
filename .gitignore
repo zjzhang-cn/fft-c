@@ -9,4 +9,5 @@ fft1d
 *.exe
 *.o
 load_kspace_demo
+kspace_to_image
 reconstructed_from_kspace.bmp
