@@ -43,21 +43,28 @@ void calculate_spectrum_and_phase(double* X_real, double* X_imag, int N, double*
     }
 }
 int main() {
-    int N = 8; // 采样点数量(增加采样点以更好地表示正弦波)
-    double fs = 8.0; // 采样频率 (Hz)
-    double f = 2.0; // 信号频率 2Hz
-    double phase_shift = M_PI / 4.0; // 初始相位 45度 (π/4 弧度)
+    int N = 64; // 采样点数量(增加采样点以更好地表示多个频率)
+    double fs = 64.0; // 采样频率 (Hz)
+    
+    // 定义多个频率成分
+    double freqs[] = {5.0, 10.0, 15.0}; // 三个频率: 5Hz, 10Hz, 15Hz
+    double amps[] = {1.0, 0.5, 0.3};    // 各频率对应的振幅
+    double phases[] = {0.0, M_PI/4.0, M_PI/2.0}; // 各频率的初始相位
+    int num_freqs = 3; // 频率成分数量
 
-    // 动态生成2Hz正弦波采样数据,初始相位45度
+    // 动态生成复合信号采样数据
     double *x = (double *)malloc(N * sizeof(double));
     if (!x) {
         printf("内存分配失败\n");
         return 1;
     }
     
-    // 生成正弦波: x[n] = sin(2*π*f*n/fs + phase_shift)
+    // 生成复合信号: x[n] = sum(A_i * sin(2*π*f_i*n/fs + phase_i))
     for (int n = 0; n < N; n++) {
-        x[n] = sin(2.0 * M_PI * f * n / fs + phase_shift);
+        x[n] = 0.0;
+        for (int i = 0; i < num_freqs; i++) {
+            x[n] += amps[i] * sin(2.0 * M_PI * freqs[i] * n / fs + phases[i]);
+        }
     }
 
     // 分配内存用于存储频域结果
@@ -79,12 +86,16 @@ int main() {
     calculate_spectrum_and_phase(X_real, X_imag, N, magnitude, phase);
 
     // 输出结果
-    printf("信号: %.1f Hz 正弦波, 初始相位: 45度 (π/4)\n", f);
+    printf("复合信号包含 %d 个频率成分:\n", num_freqs);
+    for (int i = 0; i < num_freqs; i++) {
+        printf("  频率 %d: %.1f Hz, 振幅: %.2f, 初始相位: %.2f 度\n", 
+               i+1, freqs[i], amps[i], phases[i] * 180.0 / M_PI);
+    }
     printf("采样频率: %.1f Hz\n", fs);
     printf("信号长度 N = %d\n\n", N);
     printf("频率点 k | 频率 (Hz) | 幅度谱 Mag[k] | 相位谱 Phase[k] (度)\n");
     printf("--------------------------------------------------------------------\n");
-    for (int k = 0; k < N; k++) {
+    for (int k = 0; k < N/2 + 1; k++) { // 只显示前半部分(正频率)
         double freq = k * fs / N; // 对应的实际频率
         double phase_deg = phase[k] * 180.0 / M_PI; // 将弧度转换为度数
         printf("%8d | %10.2f | %14.4f | %20.2f\n", k, freq, magnitude[k], phase_deg);
