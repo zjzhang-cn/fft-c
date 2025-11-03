@@ -2,7 +2,11 @@ dtmf
 .vscode/*
 *.out
 *.bmp
+*.bin
+*.txt
 fft2d
 fft1d
 *.exe
 *.o
+load_kspace_demo
+reconstructed_from_kspace.bmp

@@ -118,6 +118,117 @@ int save_bmp_grayscale(const char* filename, double* data, int width, int height
 }
 
 /**
+ * 保存K空间数据到文本文件
+ * @param filename 输出文件名
+ * @param real 实部数据数组
+ * @param imag 虚部数据数组
+ * @param width 数据宽度
+ * @param height 数据高度
+ */
+int save_kspace_txt(const char* filename, double* real, double* imag, int width, int height) {
+    FILE* file = fopen(filename, "w");
+    if (!file) {
+        printf("无法创建文件: %s\n", filename);
+        return -1;
+    }
+    
+    // 写入文件头
+    fprintf(file, "# K-Space Data (Frequency Domain)\n");
+    fprintf(file, "# Size: %d x %d\n", width, height);
+    fprintf(file, "# Format: row col real imag magnitude phase(rad)\n");
+    fprintf(file, "#\n");
+    
+    // 写入数据
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            int idx = i * width + j;
+            double r = real[idx];
+            double im = imag[idx];
+            double mag = sqrt(r * r + im * im);
+            double phase = atan2(im, r);
+            fprintf(file, "%4d %4d %15.8e %15.8e %15.8e %15.8e\n", 
+                    i, j, r, im, mag, phase);
+        }
+    }
+    
+    fclose(file);
+    printf("已保存K空间数据: %s (尺寸: %dx%d)\n", filename, width, height);
+    return 0;
+}
+
+/**
+ * 保存K空间数据到二进制文件
+ * @param filename 输出文件名
+ * @param real 实部数据数组
+ * @param imag 虚部数据数组
+ * @param width 数据宽度
+ * @param height 数据高度
+ */
+int save_kspace_binary(const char* filename, double* real, double* imag, int width, int height) {
+    FILE* file = fopen(filename, "wb");
+    if (!file) {
+        printf("无法创建文件: %s\n", filename);
+        return -1;
+    }
+    
+    // 写入文件头
+    fwrite(&width, sizeof(int), 1, file);
+    fwrite(&height, sizeof(int), 1, file);
+    
+    // 写入实部数据
+    fwrite(real, sizeof(double), width * height, file);
+    
+    // 写入虚部数据
+    fwrite(imag, sizeof(double), width * height, file);
+    
+    fclose(file);
+    printf("已保存K空间二进制数据: %s (尺寸: %dx%d, 大小: %ld 字节)\n", 
+           filename, width, height, 
+           (long)(2 * sizeof(int) + 2 * width * height * sizeof(double)));
+    return 0;
+}
+
+/**
+ * 从二进制文件加载K空间数据
+ * @param filename 输入文件名
+ * @param real 实部数据数组(需要预先分配)
+ * @param imag 虚部数据数组(需要预先分配)
+ * @param width 输出数据宽度
+ * @param height 输出数据高度
+ */
+int load_kspace_binary(const char* filename, double** real, double** imag, int* width, int* height) {
+    FILE* file = fopen(filename, "rb");
+    if (!file) {
+        printf("无法打开文件: %s\n", filename);
+        return -1;
+    }
+    
+    // 读取文件头
+    fread(width, sizeof(int), 1, file);
+    fread(height, sizeof(int), 1, file);
+    
+    // 分配内存
+    *real = (double*)malloc((*width) * (*height) * sizeof(double));
+    *imag = (double*)malloc((*width) * (*height) * sizeof(double));
+    
+    if (!*real || !*imag) {
+        printf("内存分配失败\n");
+        fclose(file);
+        return -1;
+    }
+    
+    // 读取实部数据
+    fread(*real, sizeof(double), (*width) * (*height), file);
+    
+    // 读取虚部数据
+    fread(*imag, sizeof(double), (*width) * (*height), file);
+    
+    fclose(file);
+    printf("已加载K空间数据: %s (尺寸: %dx%d)\n", filename, *width, *height);
+    return 0;
+}
+
+/**
  * FFT频谱中心化 (FFTShift)
  * 将零频率分量移到频谱中心
  * @param data 输入/输出数据数组
@@ -470,6 +581,11 @@ int main() {
     // 保存原始图像为BMP
     printf("\n保存图像文件...\n");
     save_bmp_grayscale("original_image.bmp", x_real, N, M);
+    
+    // 保存K空间数据 (频域数据)
+    printf("\n保存K空间数据...\n");
+    save_kspace_binary("kspace_data.bin", X_real, X_imag, N, M);
+    save_kspace_txt("kspace_data.txt", X_real, X_imag, N, M);
     
     // 对幅度谱进行中心化
     fft_shift(magnitude, N, M);
