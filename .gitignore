@@ -1,3 +1,8 @@
 dtmf
 .vscode/*
 *.out
+*.bmp
+fft2d
+fft1d
+*.exe
+*.o
