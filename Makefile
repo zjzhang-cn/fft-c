@@ -14,6 +14,7 @@ TARGET = dtmf
 TARGET_FFT2D = fft2d
 TARGET_KSPACE = kspace_to_image
 TARGET_FM = fm_signal
+TARGET_AM = am_signal
 
 # 源文件
 SOURCES = main-dtmf.c
@@ -23,7 +24,7 @@ OBJECTS = $(SOURCES:.c=.o)
 
 # 默认目标
 .PHONY: all
-all: $(TARGET) $(TARGET_FFT2D) $(TARGET_KSPACE) $(TARGET_FM)
+all: $(TARGET) $(TARGET_FFT2D) $(TARGET_KSPACE) $(TARGET_FM) $(TARGET_AM)
 
 # 编译目标
 $(TARGET): $(SOURCES)
@@ -49,6 +50,12 @@ $(TARGET_FM): main-fm.c
 	$(CC) $(CFLAGS) -o $(TARGET_FM) main-fm.c $(LDFLAGS)
 	@echo "编译完成！使用 './$(TARGET_FM)' 运行程序"
 
+# 编译AM信号生成与解调程序
+$(TARGET_AM): main-am.c
+	@echo "正在编译 AM 信号生成与解调程序..."
+	$(CC) $(CFLAGS) -o $(TARGET_AM) main-am.c $(LDFLAGS)
+	@echo "编译完成！使用 './$(TARGET_AM)' 运行程序"
+
 # 编译对象文件
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -57,7 +64,7 @@ $(TARGET_FM): main-fm.c
 .PHONY: clean
 clean:
 	@echo "清理编译文件..."
-	rm -f $(TARGET) $(TARGET_FFT2D) $(TARGET_KSPACE) $(TARGET_FM) $(OBJECTS)
+	rm -f $(TARGET) $(TARGET_FFT2D) $(TARGET_KSPACE) $(TARGET_FM) $(TARGET_AM) $(OBJECTS)
 	rm -f *.o *.bmp *.txt *.csv *.bin *.wav
 	@echo "清理完成！"
 

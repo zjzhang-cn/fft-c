@@ -13,3 +13,4 @@ kspace_to_image
 reconstructed_from_kspace.bmp
 fm_signal
 *.csv
+am_signal
