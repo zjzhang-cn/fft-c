@@ -15,6 +15,7 @@
   - [DTMF信号生成器](#1-dtmf信号生成器)
   - [2D FFT图像处理](#2-2d-fft图像处理)
   - [K空间图像重建](#3-k空间图像重建)
+  - [FM调频信号](#4-fm调频信号)
 - [编译与运行](#编译与运行)
 - [使用示例](#使用示例)
 - [技术细节](#技术细节)
@@ -32,6 +33,7 @@
 - ✨ **DTMF信号生成与识别** - 模拟电话拨号音的生成、播放和频谱识别
 - 🖼️ **2D傅里叶变换** - 图像的频域分析和空域重建
 - 🔬 **K空间处理** - MRI式K空间数据的保存、加载和图像重建
+- 📡 **FM调频信号** - 调频信号生成、解调和性能分析
 - 📊 **频谱可视化** - 对数/线性幅度谱的BMP图像输出
 - ✅ **高精度验证** - 往返变换误差分析（FFT→IDFT→还原）
 
@@ -370,6 +372,59 @@ real[0][1] imag[0][1]
 - [README-KSPACE-RECONSTRUCTION.md](README-KSPACE-RECONSTRUCTION.md)
 - [KSPACE-RECONSTRUCTION-SUMMARY.md](KSPACE-RECONSTRUCTION-SUMMARY.md)
 - [QUICKREF-KSPACE.md](QUICKREF-KSPACE.md)
+
+---
+
+### 4. FM调频信号
+
+📡 完整的调频信号生成与解调系统
+
+#### 功能特性
+
+- **信号生成**: 标准FM信号 s(t) = cos(2πfc·t + β·sin(2πfm·t))
+- **多种解调算法**: 瞬时频率法、相位鉴频器、Hilbert变换
+- **性能分析**: MSE、SNR等指标
+- **信号处理**: 低通滤波、直流去除
+
+#### 信号参数
+
+- 载波频率: 1000 Hz
+- 调制频率: 100 Hz
+- 调制指数: 5.0
+- 最大频偏: 500 Hz
+- 带宽(Carson规则): 1200 Hz
+
+#### 快速使用
+
+```bash
+# 编译并运行
+make fm_signal
+./fm_signal
+
+# 或运行测试脚本
+./test_fm.sh
+
+# 可视化
+python3 plot_fm.py
+```
+
+#### 输出文件
+
+- `fm_signal.txt/csv` - 原始FM调制信号
+- `fm_demodulated.txt/csv` - 解调后的信号  
+- `fm_original_modulating.txt` - 理论调制信号
+
+#### 解调性能
+
+```
+解调性能:
+  均方误差 MSE = 233363.93
+  信噪比 SNR = -2.71 dB
+  理论最大频偏: 500.00 Hz
+  实际解调幅度: 529.55 Hz
+```
+
+📖 详细文档: [README-FM.md](README-FM.md)
 
 ---
 
