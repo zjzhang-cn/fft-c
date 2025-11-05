@@ -7,106 +7,206 @@
 #endif
 
 /**
- * 计算离散傅里叶变换 (DFT)
- * @param x 输入信号的实部数组
+ * 计算一维离散傅里叶变换 (1D DFT)
+ * @param x_real 输入信号的实部数组
+ * @param x_imag 输入信号的虚部数组
  * @param N 信号长度
  * @param X_real 输出信号频域的实部数组
  * @param X_imag 输出信号频域的虚部数组
  */
-void calculate_dft(double* x, int N, double* X_real, double* X_imag) {
+void calculate_1d_dft(double* x_real, double* x_imag, int N, double* X_real, double* X_imag) {
     for (int k = 0; k < N; k++) {
         X_real[k] = 0.0;
         X_imag[k] = 0.0;
         for (int n = 0; n < N; n++) {
             double angle = 2.0 * M_PI * k * n / N;
-            X_real[k] += x[n] * cos(angle);
-            X_imag[k] -= x[n] * sin(angle);
+            double cos_val = cos(angle);
+            double sin_val = sin(angle);
+            // 复数乘法: (a + bi) * (cos - i*sin)
+            X_real[k] += x_real[n] * cos_val + x_imag[n] * sin_val;
+            X_imag[k] += x_imag[n] * cos_val - x_real[n] * sin_val;
         }
     }
 }
 
 /**
- * 计算频谱 (幅度谱) 和相位谱
- * @param X_real 频域实部
- * @param X_imag 频域虚部
- * @param N 信号长度
- * @param magnitude 输出幅度谱数组
- * @param phase 输出相位谱数组 (弧度)
+ * 计算二维离散傅里叶变换 (2D DFT)
+ * @param x_real 输入信号的实部数组 (M x N)
+ * @param x_imag 输入信号的虚部数组 (M x N)
+ * @param M 行数
+ * @param N 列数
+ * @param X_real 输出信号频域的实部数组 (M x N)
+ * @param X_imag 输出信号频域的虚部数组 (M x N)
  */
-void calculate_spectrum_and_phase(double* X_real, double* X_imag, int N, double* magnitude, double* phase) {
-    for (int k = 0; k < N; k++) {
-        // 幅度 = sqrt(实部^2 + 虚部^2)
-        magnitude[k] = sqrt(X_real[k] * X_real[k] + X_imag[k] * X_imag[k]);
-
-        // 相位 = atan2(虚部, 实部)，范围 (-PI, PI]
-        phase[k] = atan2(X_imag[k], X_real[k]);
-    }
-}
-int main() {
-    int N = 64; // 采样点数量(增加采样点以更好地表示多个频率)
-    double fs = 64.0; // 采样频率 (Hz)
+void calculate_2d_dft(double* x_real, double* x_imag, int M, int N, 
+                      double* X_real, double* X_imag) {
+    // 临时存储数组
+    double *temp_real = (double *)malloc(M * N * sizeof(double));
+    double *temp_imag = (double *)malloc(M * N * sizeof(double));
+    double *row_real = (double *)malloc(N * sizeof(double));
+    double *row_imag = (double *)malloc(N * sizeof(double));
+    double *row_out_real = (double *)malloc(N * sizeof(double));
+    double *row_out_imag = (double *)malloc(N * sizeof(double));
     
-    // 定义多个频率成分
-    double freqs[] = {5.0, 10.0, 15.0}; // 三个频率: 5Hz, 10Hz, 15Hz
-    double amps[] = {1.0, 0.5, 0.3};    // 各频率对应的振幅
-    double phases[] = {0.0, M_PI/4.0, M_PI/2.0}; // 各频率的初始相位
-    int num_freqs = 3; // 频率成分数量
-
-    // 动态生成复合信号采样数据
-    double *x = (double *)malloc(N * sizeof(double));
-    if (!x) {
+    if (!temp_real || !temp_imag || !row_real || !row_imag || !row_out_real || !row_out_imag) {
         printf("内存分配失败\n");
-        return 1;
+        return;
     }
     
-    // 生成复合信号: x[n] = sum(A_i * sin(2*π*f_i*n/fs + phase_i))
-    for (int n = 0; n < N; n++) {
-        x[n] = 0.0;
-        for (int i = 0; i < num_freqs; i++) {
-            x[n] += amps[i] * sin(2.0 * M_PI * freqs[i] * n / fs + phases[i]);
+    // 第一步: 对每一行进行1D DFT
+    for (int i = 0; i < M; i++) {
+        // 提取第i行
+        for (int j = 0; j < N; j++) {
+            row_real[j] = x_real[i * N + j];
+            row_imag[j] = x_imag[i * N + j];
+        }
+        
+        // 对该行进行1D DFT
+        calculate_1d_dft(row_real, row_imag, N, row_out_real, row_out_imag);
+        
+        // 存储结果
+        for (int j = 0; j < N; j++) {
+            temp_real[i * N + j] = row_out_real[j];
+            temp_imag[i * N + j] = row_out_imag[j];
         }
     }
-
-    // 分配内存用于存储频域结果
-    double *X_real = (double *)malloc(N * sizeof(double));
-    double *X_imag = (double *)malloc(N * sizeof(double));
-    double *magnitude = (double *)malloc(N * sizeof(double));
-    double *phase = (double *)malloc(N * sizeof(double));
-
-    if (!X_real || !X_imag || !magnitude || !phase) {
+    
+    // 分配列数组
+    double *col_real = (double *)malloc(M * sizeof(double));
+    double *col_imag = (double *)malloc(M * sizeof(double));
+    double *col_out_real = (double *)malloc(M * sizeof(double));
+    double *col_out_imag = (double *)malloc(M * sizeof(double));
+    
+    if (!col_real || !col_imag || !col_out_real || !col_out_imag) {
         printf("内存分配失败\n");
-        free(x);
+        free(temp_real); free(temp_imag);
+        free(row_real); free(row_imag); free(row_out_real); free(row_out_imag);
+        return;
+    }
+    
+    // 第二步: 对每一列进行1D DFT
+    for (int j = 0; j < N; j++) {
+        // 提取第j列
+        for (int i = 0; i < M; i++) {
+            col_real[i] = temp_real[i * N + j];
+            col_imag[i] = temp_imag[i * N + j];
+        }
+        
+        // 对该列进行1D DFT
+        calculate_1d_dft(col_real, col_imag, M, col_out_real, col_out_imag);
+        
+        // 存储结果
+        for (int i = 0; i < M; i++) {
+            X_real[i * N + j] = col_out_real[i];
+            X_imag[i * N + j] = col_out_imag[i];
+        }
+    }
+    
+    // 释放临时内存
+    free(temp_real);
+    free(temp_imag);
+    free(row_real);
+    free(row_imag);
+    free(row_out_real);
+    free(row_out_imag);
+    free(col_real);
+    free(col_imag);
+    free(col_out_real);
+    free(col_out_imag);
+}
+
+int main() {
+    int M = 16;  // 图像行数
+    int N = 16;  // 图像列数
+    
+    printf("2D FFT 示例 - 图像尺寸: %d x %d\n\n", M, N);
+    
+    // 分配内存用于存储2D信号 (模拟图像)
+    double *x_real = (double *)calloc(M * N, sizeof(double));
+    double *x_imag = (double *)calloc(M * N, sizeof(double));
+    double *X_real = (double *)malloc(M * N * sizeof(double));
+    double *X_imag = (double *)malloc(M * N * sizeof(double));
+    double *magnitude = (double *)malloc(M * N * sizeof(double));
+    
+    if (!x_real || !x_imag || !X_real || !X_imag || !magnitude) {
+        printf("内存分配失败\n");
         return 1;
     }
-
-    // 1. 执行 DFT
-    calculate_dft(x, N, X_real, X_imag);
-
-    // 2. 计算幅度和相位
-    calculate_spectrum_and_phase(X_real, X_imag, N, magnitude, phase);
-
-    // 输出结果
-    printf("复合信号包含 %d 个频率成分:\n", num_freqs);
-    for (int i = 0; i < num_freqs; i++) {
-        printf("  频率 %d: %.1f Hz, 振幅: %.2f, 初始相位: %.2f 度\n", 
-               i+1, freqs[i], amps[i], phases[i] * 180.0 / M_PI);
+    
+    // 生成测试图像: 多个2D正弦波的叠加
+    printf("生成测试图像 (多个2D频率成分的叠加)...\n\n");
+    
+    // 频率成分1: 低频
+    double fx1 = 2.0, fy1 = 1.0, amp1 = 1.0;
+    // 频率成分2: 中频
+    double fx2 = 4.0, fy2 = 3.0, amp2 = 0.5;
+    // 频率成分3: 高频
+    double fx3 = 1.0, fy3 = 5.0, amp3 = 0.3;
+    
+    printf("频率成分:\n");
+    printf("  1. fx=%.1f, fy=%.1f, 振幅=%.2f\n", fx1, fy1, amp1);
+    printf("  2. fx=%.1f, fy=%.1f, 振幅=%.2f\n", fx2, fy2, amp2);
+    printf("  3. fx=%.1f, fy=%.1f, 振幅=%.2f\n\n", fx3, fy3, amp3);
+    
+    for (int i = 0; i < M; i++) {
+        for (int j = 0; j < N; j++) {
+            x_real[i * N + j] = 
+                amp1 * sin(2.0 * M_PI * fx1 * j / N) * sin(2.0 * M_PI * fy1 * i / M) +
+                amp2 * sin(2.0 * M_PI * fx2 * j / N) * sin(2.0 * M_PI * fy2 * i / M) +
+                amp3 * sin(2.0 * M_PI * fx3 * j / N) * sin(2.0 * M_PI * fy3 * i / M);
+            x_imag[i * N + j] = 0.0;  // 输入为实数信号
+        }
     }
-    printf("采样频率: %.1f Hz\n", fs);
-    printf("信号长度 N = %d\n\n", N);
-    printf("频率点 k | 频率 (Hz) | 幅度谱 Mag[k] | 相位谱 Phase[k] (度)\n");
-    printf("--------------------------------------------------------------------\n");
-    for (int k = 0; k < N/2 + 1; k++) { // 只显示前半部分(正频率)
-        double freq = k * fs / N; // 对应的实际频率
-        double phase_deg = phase[k] * 180.0 / M_PI; // 将弧度转换为度数
-        printf("%8d | %10.2f | %14.4f | %20.2f\n", k, freq, magnitude[k], phase_deg);
+    
+    // 显示原始图像 (部分)
+    printf("原始图像 (左上角 8x8 区域):\n");
+    for (int i = 0; i < 8; i++) {
+        for (int j = 0; j < 8; j++) {
+            printf("%6.2f ", x_real[i * N + j]);
+        }
+        printf("\n");
     }
-
+    printf("\n");
+    
+    // 执行2D DFT
+    printf("正在执行 2D DFT...\n");
+    calculate_2d_dft(x_real, x_imag, M, N, X_real, X_imag);
+    
+    // 计算幅度谱
+    for (int i = 0; i < M * N; i++) {
+        magnitude[i] = sqrt(X_real[i] * X_real[i] + X_imag[i] * X_imag[i]);
+    }
+    
+    // 显示幅度谱
+    printf("\n2D 幅度谱 (左上角 8x8 区域):\n");
+    for (int i = 0; i < 8; i++) {
+        for (int j = 0; j < 8; j++) {
+            printf("%6.1f ", magnitude[i * N + j]);
+        }
+        printf("\n");
+    }
+    
+    // 找出幅度谱中的峰值位置
+    printf("\n主要频率分量 (幅度 > 5.0):\n");
+    printf("位置 (ky, kx) | 幅度      | 对应频率 (fy, fx)\n");
+    printf("------------------------------------------------\n");
+    for (int i = 0; i < M; i++) {
+        for (int j = 0; j < N; j++) {
+            if (magnitude[i * N + j] > 5.0) {
+                double fy = (i <= M/2) ? i : i - M;
+                double fx = (j <= N/2) ? j : j - N;
+                printf("(%2d, %2d)      | %8.2f  | (%.0f, %.0f)\n", 
+                       i, j, magnitude[i * N + j], fy, fx);
+            }
+        }
+    }
+    
     // 释放内存
-    free(x);
+    free(x_real);
+    free(x_imag);
     free(X_real);
     free(X_imag);
     free(magnitude);
-    free(phase);
-
+    
     return 0;
 }
