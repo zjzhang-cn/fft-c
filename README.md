@@ -17,6 +17,7 @@
   - [K空间图像重建](#3-k空间图像重建)
   - [FM调频信号](#4-fm调频信号)
   - [AM调幅信号](#5-am调幅信号)
+  - [包络检波器](#6-包络检波器)
 - [编译与运行](#编译与运行)
 - [使用示例](#使用示例)
 - [技术细节](#技术细节)
@@ -35,8 +36,9 @@
 - 🖼️ **2D傅里叶变换** - 图像的频域分析和空域重建
 - 🔬 **K空间处理** - MRI式K空间数据的保存、加载和图像重建
 - 📡 **FM调频信号** - 调频信号生成、解调和性能分析
-- � **AM调幅信号** - 幅度调制信号生成、三种解调算法及性能对比
-- �📊 **频谱可视化** - 对数/线性幅度谱的BMP图像输出
+- 📻 **AM调幅信号** - 幅度调制信号生成、三种解调算法及性能对比
+- ⚡ **包络检波器** - 真实电路模拟（二极管 + RC 滤波器）
+- 📊 **频谱可视化** - 对数/线性幅度谱的BMP图像输出
 - ✅ **高精度验证** - 往返变换误差分析（FFT→IDFT→还原）
 
 ### 技术亮点
@@ -491,6 +493,83 @@ python3 plot_am.py
 
 ---
 
+### 6. 包络检波器
+
+⚡ 真实包络检波电路的 C 语言模拟（二极管 + RC 低通滤波器）
+
+#### 功能特性
+
+- **真实电路模型**: 
+  - 二极管整流特性（指数模型和分段线性模型）
+  - RC 低通滤波器（充放电过程模拟）
+  - 电路参数自动优化
+- **数值方法**:
+  - 欧拉法（一阶精度）
+  - 梯形法（二阶精度）
+- **性能分析**: RMSE 误差计算、参数敏感性测试
+- **可视化工具**: 完整的结果图表生成
+
+#### 电路参数
+
+- 载波频率: 10 kHz
+- 调制频率: 500 Hz
+- 二极管压降: 0.7 V
+- 电阻 R: 47 kΩ (自动优化)
+- 电容 C: 0.1 μF (自动优化)
+- 截止频率: ~34 Hz
+
+#### 快速使用
+
+```bash
+# 编译并运行
+make envelope_detector
+./envelope_detector
+
+# 或使用测试脚本
+./test_envelope_detector.sh
+
+# 可视化结果
+python3 plot_envelope_detector.py           # 包络检波结果
+python3 plot_envelope_detector.py --rc      # RC 滤波器响应
+python3 plot_envelope_detector.py --diode   # 二极管特性
+python3 plot_envelope_detector.py --all     # 所有图表
+```
+
+#### 输出文件
+
+- `envelope_detector_result.csv` - 时间、AM信号、解调信号数据
+- `envelope_detector_result.png` - 包络检波过程可视化
+- `rc_filter_response.png` - RC 滤波器频率响应（幅度和相位）
+- `diode_characteristic.png` - 二极管 I-V 特性和整流特性
+
+#### 电路原理
+
+```
+AM信号 → 二极管整流 → RC低通滤波 → 解调输出
+          (去负半周)    (提取包络)    (去直流)
+```
+
+#### 性能指标
+
+```
+=== RC 参数计算 ===
+  R = 47000 Ω (47 kΩ)
+  C = 1.00e-07 F (0.10 μF)
+  实际截止频率 = 33.86 Hz
+  τ = RC = 4.70 ms
+
+=== 性能分析 ===
+  均方根误差 RMSE = 0.818
+```
+
+📖 详细文档:
+- [README-ENVELOPE-DETECTOR.md](README-ENVELOPE-DETECTOR.md) - 完整技术文档
+- [QUICKSTART-ENVELOPE-DETECTOR.md](QUICKSTART-ENVELOPE-DETECTOR.md) - 快速入门
+- [ENVELOPE-DETECTOR-SUMMARY.md](ENVELOPE-DETECTOR-SUMMARY.md) - 实现总结
+- [DEMO-ENVELOPE-DETECTOR.md](DEMO-ENVELOPE-DETECTOR.md) - 运行演示
+
+---
+
 ## 🔧 编译与运行
 
 ### Makefile 命令
@@ -686,17 +765,37 @@ K空间是图像在频域的表示，包含：
 
 ## 📖 文档索引
 
+### 核心文档
 - **[DOC_INDEX.md](DOC_INDEX.md)** - 完整文档索引
 - **[QUICKSTART.md](QUICKSTART.md)** - 快速入门指南
+- **[PROJECT_SNAPSHOT.md](PROJECT_SNAPSHOT.md)** - 项目状态快照
+- **[GIT_GUIDE.md](GIT_GUIDE.md)** - Git使用指南
+- **[SESSION_HISTORY.md](SESSION_HISTORY.md)** - 开发历史记录
+
+### DTMF 模块
 - **[README-DTMF.md](README-DTMF.md)** - DTMF详细文档
+
+### 图像处理模块
 - **[README-FFT2D.md](README-FFT2D.md)** - 2D FFT详细文档
 - **[README-KSPACE.md](README-KSPACE.md)** - K空间数据格式
 - **[README-KSPACE-RECONSTRUCTION.md](README-KSPACE-RECONSTRUCTION.md)** - K空间重建指南
 - **[KSPACE-RECONSTRUCTION-SUMMARY.md](KSPACE-RECONSTRUCTION-SUMMARY.md)** - 功能总结
 - **[QUICKREF-KSPACE.md](QUICKREF-KSPACE.md)** - 快速参考手册
-- **[PROJECT_SNAPSHOT.md](PROJECT_SNAPSHOT.md)** - 项目状态快照
-- **[GIT_GUIDE.md](GIT_GUIDE.md)** - Git使用指南
-- **[SESSION_HISTORY.md](SESSION_HISTORY.md)** - 开发历史记录
+
+### FM 调频模块
+- **[README-FM.md](README-FM.md)** - FM 调频详细文档
+
+### AM 调幅模块
+- **[README-AM.md](README-AM.md)** - AM 调幅完整技术文档
+- **[QUICKSTART-AM.md](QUICKSTART-AM.md)** - AM 快速入门
+- **[AM-SUMMARY.md](AM-SUMMARY.md)** - AM 项目总结
+- **[AM-FILES.md](AM-FILES.md)** - AM 文件说明
+
+### 包络检波器模块
+- **[README-ENVELOPE-DETECTOR.md](README-ENVELOPE-DETECTOR.md)** - 包络检波器完整技术文档
+- **[QUICKSTART-ENVELOPE-DETECTOR.md](QUICKSTART-ENVELOPE-DETECTOR.md)** - 包络检波器快速入门
+- **[ENVELOPE-DETECTOR-SUMMARY.md](ENVELOPE-DETECTOR-SUMMARY.md)** - 包络检波器实现总结
+- **[DEMO-ENVELOPE-DETECTOR.md](DEMO-ENVELOPE-DETECTOR.md)** - 包络检波器运行演示
 
 ---
 

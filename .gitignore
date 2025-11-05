@@ -14,3 +14,5 @@ reconstructed_from_kspace.bmp
 fm_signal
 *.csv
 am_signal
+*.png
+envelope_detector

@@ -15,6 +15,7 @@ TARGET_FFT2D = fft2d
 TARGET_KSPACE = kspace_to_image
 TARGET_FM = fm_signal
 TARGET_AM = am_signal
+TARGET_ENVELOPE = envelope_detector
 
 # 源文件
 SOURCES = main-dtmf.c
@@ -24,7 +25,7 @@ OBJECTS = $(SOURCES:.c=.o)
 
 # 默认目标
 .PHONY: all
-all: $(TARGET) $(TARGET_FFT2D) $(TARGET_KSPACE) $(TARGET_FM) $(TARGET_AM)
+all: $(TARGET) $(TARGET_FFT2D) $(TARGET_KSPACE) $(TARGET_FM) $(TARGET_AM) $(TARGET_ENVELOPE)
 
 # 编译目标
 $(TARGET): $(SOURCES)
@@ -56,6 +57,12 @@ $(TARGET_AM): main-am.c
 	$(CC) $(CFLAGS) -o $(TARGET_AM) main-am.c $(LDFLAGS)
 	@echo "编译完成！使用 './$(TARGET_AM)' 运行程序"
 
+# 编译包络检波器
+$(TARGET_ENVELOPE): envelope_detector.c
+	@echo "正在编译包络检波器..."
+	$(CC) $(CFLAGS) -o $(TARGET_ENVELOPE) envelope_detector.c $(LDFLAGS)
+	@echo "编译完成！使用 './$(TARGET_ENVELOPE)' 运行程序"
+
 # 编译对象文件
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -64,8 +71,8 @@ $(TARGET_AM): main-am.c
 .PHONY: clean
 clean:
 	@echo "清理编译文件..."
-	rm -f $(TARGET) $(TARGET_FFT2D) $(TARGET_KSPACE) $(TARGET_FM) $(TARGET_AM) $(OBJECTS)
-	rm -f *.o *.bmp *.txt *.csv *.bin *.wav
+	rm -f $(TARGET) $(TARGET_FFT2D) $(TARGET_KSPACE) $(TARGET_FM) $(TARGET_AM) $(TARGET_ENVELOPE) $(OBJECTS)
+	rm -f *.o *.bmp *.txt *.csv *.bin *.wav *.png
 	@echo "清理完成！"
 
 # 测试运行
